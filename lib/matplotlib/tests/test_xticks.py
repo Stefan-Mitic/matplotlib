@@ -42,3 +42,4 @@ def test_xticks_range():
     for ax in [ax3]:
         ax.plot([1, 2])
     ax3.set_xticks([1, 2])
+    
