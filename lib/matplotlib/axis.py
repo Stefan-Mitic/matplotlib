@@ -1672,7 +1672,7 @@ class Axis(martist.Artist):
         """
         # XXX if the user changes units, the information will be lost here
         ticks = self.convert_units(ticks)
-        if len(ticks) > 0:
+        if len(ticks) > 0: # now handles ticks with length greater than 1
             xleft, xright = self.get_view_interval()
             if xright > xleft:
                 self.set_view_interval(min(ticks), max(ticks))
