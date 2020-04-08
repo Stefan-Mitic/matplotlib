@@ -12,7 +12,7 @@ from matplotlib.backend_bases import (
     StatusbarBase, TimerBase, ToolContainerBase, cursors)
 from matplotlib.backend_managers import ToolManager
 from matplotlib.figure import Figure
-from matplotlib.widgets import SubplotTool
+from matplotlib.widgets import SubplotTool, AxesTool
 
 try:
     import gi
@@ -437,6 +437,13 @@ class FigureManagerGTK3(FigureManagerBase):
 
 
 class NavigationToolbar2GTK3(NavigationToolbar2, Gtk.Toolbar):
+    # toolitems = [*NavigationToolbar2.toolitems]
+    # toolitems.insert(
+    #     # Add 'customize' action after 'subplots'
+    #     [name for name, *_ in toolitems].index("Subplots") + 1,
+    #     ("Customize", "Edit axis, curve and image parameters",
+    #      "qt4_editor_options", "edit_parameters"))
+
     def __init__(self, canvas, window):
         self.win = window
         GObject.GObject.__init__(self)
@@ -565,12 +572,10 @@ class NavigationToolbar2GTK3(NavigationToolbar2, Gtk.Toolbar):
         except Exception as e:
             error_msg_gtk(str(e), parent=self)
 
-    def configure_subplots(self, button):
-        toolfig = Figure(figsize=(6, 3))
+    def _init_toolfig(self, title, size):
+        toolfig = Figure(figsize=size)
         canvas = type(self.canvas)(toolfig)
-        toolfig.subplots_adjust(top=0.9)
-        # Need to keep a reference to the tool.
-        _tool = SubplotTool(self.canvas.figure, toolfig)
+        # toolfig.subplots_adjust(top=0.9)
 
         w = int(toolfig.bbox.width)
         h = int(toolfig.bbox.height)
@@ -582,7 +587,7 @@ class NavigationToolbar2GTK3(NavigationToolbar2, Gtk.Toolbar):
             # we presumably already logged a message on the
             # failure of the main plot, don't keep reporting
             pass
-        window.set_title("Subplot Configuration Tool")
+        window.set_title(title)
         window.set_default_size(w, h)
         vbox = Gtk.Box()
         vbox.set_property("orientation", Gtk.Orientation.VERTICAL)
@@ -592,6 +597,18 @@ class NavigationToolbar2GTK3(NavigationToolbar2, Gtk.Toolbar):
         canvas.show()
         vbox.pack_start(canvas, True, True, 0)
         window.show()
+        return toolfig
+
+    def configure_subplots(self, button):
+        toolfig = self._init_toolfig("Subplot Configuration Tool", (6, 3))
+        toolfig.subplots_adjust(top=0.9)
+        # Need to keep a reference to the tool.
+        _tool = SubplotTool(self.canvas.figure, toolfig)
+
+    def edit_parameters(self, button):
+        toolfig = self._init_toolfig("Figure options", (4, 5))
+        # Need to keep a reference to the tool.
+        _tool = AxesTool(self.canvas.figure, toolfig)
 
     def set_history_buttons(self):
         can_backward = self._nav_stack._pos > 0

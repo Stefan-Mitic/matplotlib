@@ -25,7 +25,7 @@ from matplotlib.backend_managers import ToolManager
 from matplotlib.figure import Figure
 from matplotlib.path import Path
 from matplotlib.transforms import Affine2D
-from matplotlib.widgets import SubplotTool
+from matplotlib.widgets import SubplotTool, AxesTool
 
 import wx
 
@@ -1120,6 +1120,13 @@ cursord = {
 
 
 class NavigationToolbar2Wx(NavigationToolbar2, wx.ToolBar):
+    # toolitems = [*NavigationToolbar2.toolitems]
+    # toolitems.insert(
+    #     # Add 'customize' action after 'subplots'
+    #     [name for name, *_ in toolitems].index("Subplots") + 1,
+    #     ("Customize", "Edit axis, curve and image parameters",
+    #      "qt4_editor_options", "edit_parameters"))
+
     def __init__(self, canvas):
         wx.ToolBar.__init__(self, canvas.GetParent(), -1)
         NavigationToolbar2.__init__(self, canvas)
@@ -1166,13 +1173,13 @@ class NavigationToolbar2Wx(NavigationToolbar2, wx.ToolBar):
     def pan(self, *args):
         self.ToggleTool(self.wx_ids['Zoom'], False)
         NavigationToolbar2.pan(self, *args)
-
-    def configure_subplots(self, *args):
+    
+    def _init_toolfig(self, title, size):
         global FigureManager  # placates pyflakes: created by @_Backend.export
-        frame = wx.Frame(None, -1, "Configure subplots")
+        frame = wx.Frame(None, -1, title)
         _set_frame_icon(frame)
 
-        toolfig = Figure((6, 3))
+        toolfig = Figure(size)
         canvas = type(self.canvas)(frame, -1, toolfig)
 
         # Create a figure manager to manage things
@@ -1184,8 +1191,18 @@ class NavigationToolbar2Wx(NavigationToolbar2, wx.ToolBar):
         sizer.Add(canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
         frame.SetSizer(sizer)
         frame.Fit()
-        SubplotTool(self.canvas.figure, toolfig)
         frame.Show()
+        return toolfig
+
+    def configure_subplots(self, *args):
+        # Creates and shows toolfig using helper function
+        toolfig = self._init_toolfig("Configure subplots", (6, 3))
+        SubplotTool(self.canvas.figure, toolfig)
+
+    def edit_parameters(self, *args):
+        # Creates and shows toolfig using helper function
+        toolfig = self._init_toolfig("Figure options", (4, 5))
+        AxesTool(self.canvas.figure, toolfig)
 
     def save_figure(self, *args):
         # Fetch the required filename and file type.
